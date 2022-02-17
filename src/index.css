@@ -78,9 +78,9 @@ code {
 }
 
 .won {
-  color: lightgreen;
+  color: green;
 }
 
 .lost {
-  color: lightcoral;
+  color: red;
 }
