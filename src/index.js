@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import { PlayAgain } from "./PlayAgain";
@@ -9,37 +9,63 @@ import { StarsDisplay } from "./StarsDisplay";
 
 const StarMatch = () => {
   const [stars, setStars] = useState(utils.random(1, 9));
-  const [availableNums, setAvailableNums] = useState(utils.range(1, 9))
-  const [candidateNums, setCandidateNums] = useState([])
+  const [availableNums, setAvailableNums] = useState(utils.range(1, 9));
+  const [candidateNums, setCandidateNums] = useState([]);
+  const [seconds, setSeconds] = useState(10);
+
+  useEffect(() => {
+    if (seconds > 0) {
+      const timer = setTimeout(() => {
+        setSeconds(seconds - 1);
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  });
+
+  const gameStatus = () => {
+    if (availableNums.length === 0) {
+      return "won";
+    }
+
+    if (seconds === 0) {
+      return "lost";
+    }
+
+    return "active";
+  };
 
   const candidatesAreWrong = utils.sum(candidateNums) > stars;
-  const gameIsDone = availableNums.length === 0;
+  const status = gameStatus();
 
-  const numberStatus = number => {
-    if(!availableNums.includes(number)) {
-      return 'used';
+  const numberStatus = (number) => {
+    if (!availableNums.includes(number)) {
+      return "used";
     }
 
-    if(candidateNums.includes(number)) {
-      return candidatesAreWrong ? 'wrong' : 'candidate';
+    if (candidateNums.includes(number)) {
+      return candidatesAreWrong ? "wrong" : "candidate";
     }
 
-    return 'available';
+    return "available";
   };
 
   const onNumberClick = (number, currentStatus) => {
-    if(currentStatus === 'used') {
+    if (currentStatus === "used" || status !== "active") {
       return;
     }
 
-    const newCandidateNums = currentStatus === 'available'
-      ? candidateNums.concat(number)
-      : candidateNums.filter(n => n !== number);
+    const newCandidateNums =
+      currentStatus === "available"
+        ? candidateNums.concat(number)
+        : candidateNums.filter((n) => n !== number);
 
     if (utils.sum(newCandidateNums) !== stars) {
-      setCandidateNums(newCandidateNums)
+      setCandidateNums(newCandidateNums);
     } else {
-      const newAvailableNums = availableNums.filter(n => !newCandidateNums.includes(n));
+      const newAvailableNums = availableNums.filter(
+        (n) => !newCandidateNums.includes(n)
+      );
       setStars(utils.randomSumIn(newAvailableNums, 9));
       setAvailableNums(newAvailableNums);
       setCandidateNums([]);
@@ -48,9 +74,10 @@ const StarMatch = () => {
 
   const resetGame = () => {
     setStars(utils.random(1, 9));
-    setAvailableNums(utils.range(1,9));
-    setCandidateNums([])
-  }
+    setAvailableNums(utils.range(1, 9));
+    setCandidateNums([]);
+    setSeconds(10);
+  };
 
   return (
     <div className="game">
@@ -59,19 +86,24 @@ const StarMatch = () => {
       </div>
       <div className="body">
         <div className="left">
-          {
-            gameIsDone
-            ? <PlayAgain onClick={resetGame} />
-            : <StarsDisplay range={utils.range(1, stars)} />
-          }
-        </div>
-        <div className="right">
-          {utils.range(1, 9).map(n => 
-            <PlayNumber key={n} number={n} status={numberStatus(n)} onClick={onNumberClick} />
+          {status !== "active" ? (
+            <PlayAgain onClick={resetGame} gameStatus={status} />
+          ) : (
+            <StarsDisplay range={utils.range(1, stars)} />
           )}
         </div>
+        <div className="right">
+          {utils.range(1, 9).map((n) => (
+            <PlayNumber
+              key={n}
+              number={n}
+              status={numberStatus(n)}
+              onClick={onNumberClick}
+            />
+          ))}
+        </div>
       </div>
-      <div className="timer">Time Remaining: 10</div>
+      <div className="timer">Time Remaining: {seconds}</div>
     </div>
   );
 };
@@ -79,7 +111,7 @@ const StarMatch = () => {
 // Math science
 const utils = {
   // Sum an array
-  sum: arr => arr.reduce((acc, curr) => acc + curr, 0),
+  sum: (arr) => arr.reduce((acc, curr) => acc + curr, 0),
 
   // create an array of numbers between min and max (edges included)
   range: (min, max) => Array.from({ length: max - min + 1 }, (_, i) => min + i),
@@ -106,4 +138,4 @@ const utils = {
   },
 };
 
-ReactDOM.render(<StarMatch />, document.getElementById('root'));
+ReactDOM.render(<StarMatch />, document.getElementById("root"));
